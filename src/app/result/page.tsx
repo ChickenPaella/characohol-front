@@ -1,36 +1,35 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTestStore } from '@/stores/useTestStore';
+import type { Recommendation } from '@/data/recommendations';
 
 export default function ResultPage() {
     const router = useRouter();
     const { answers, reset } = useTestStore();
-    const [recommendation, setRecommendation] = useState<any>(null);
-
-    const resultTag = useMemo(() => {
-        const counts: Record<string, number> = {};
-        Object.values(answers).forEach((tag) => {
-            counts[tag] = (counts[tag] || 0) + 1;
-        });
-        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-        return sorted[0]?.[0];
-    }, [answers]);
+    const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
 
     useEffect(() => {
-        if (!resultTag) {
+        if (Object.keys(answers).length === 0) {
             router.push('/');
-        } else {
-            fetch(`/api/recommendations/${encodeURIComponent(resultTag)}`)
-                .then((res) => res.json())
-                .then(setRecommendation);
+            return;
         }
-    }, [resultTag, router]);
 
-    if (!recommendation) {
-        return <div className="text-center mt-20">결과를 불러오는 중...</div>;
-    }
+        const tagCounts: Record<string, number> = {};
+        Object.values(answers).forEach((tag) => {
+            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        });
+
+        const resultTag = Object.entries(tagCounts).sort((a, b) => b[1] - a[1])[0][0];
+
+        fetch(`/api/recommendations/${encodeURIComponent(resultTag)}`)
+            .then((res) => res.ok ? res.json() : Promise.reject('Not found'))
+            .then((data) => setRecommendation(data))
+            .catch(() => router.push('/'));
+    }, [answers, router]);
+
+    if (!recommendation) return <p className="text-center mt-10">결과를 불러오는 중...</p>;
 
     return (
         <div className="max-w-md mx-auto p-6 text-center">

@@ -47,4 +47,7 @@ export const recommendations = {
         imageUrl: '/characters/utaha.png',
         message: '은은한 향기처럼 매력적인 당신의 취향을 위한 술!',
     },
-};
+} as const
+
+export type RecommendationTag = keyof typeof recommendations;
+export type Recommendation = (typeof recommendations)[RecommendationTag];

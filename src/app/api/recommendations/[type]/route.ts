@@ -1,11 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { recommendations } from '@/data/recommendations';
 
-export async function GET(req: Request, { params }: { params: { type: string } }) {
-    const { type } = params;
-    const result = recommendations[type as keyof typeof recommendations];
-    if (!result) {
-        return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    }
+type Props = {
+    params: Promise<{
+        type: keyof typeof recommendations
+    }>
+}
+
+export async function GET(
+    req: NextRequest,
+    props: Props
+) {
+    const params = await props.params;
+
+    const result = recommendations[params.type];
     return NextResponse.json(result);
 }
